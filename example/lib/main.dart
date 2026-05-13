@@ -18,7 +18,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final _ntfyPlugin = Ntfy();
-  final _topicController = TextEditingController(text: 'dockploy_server');
+  final _topicController = TextEditingController(text: 'orange_orange');
   final _authController = TextEditingController();
   final List<String> _messages = [];
   bool _isSubscribed = false;

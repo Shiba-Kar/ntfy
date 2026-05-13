@@ -7,6 +7,8 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -139,7 +141,13 @@ class NtfyForegroundService : Service() {
                 val message = jsonObject.get("message")?.asString ?: ""
                 val id = jsonObject.get("id")?.asString ?: System.currentTimeMillis().toString()
                 
-                showNotification(title, message, id)
+                val iconUrl = jsonObject.get("icon")?.asString
+                var attachmentUrl: String? = null
+                if (jsonObject.has("attachment") && jsonObject.get("attachment").isJsonObject) {
+                    attachmentUrl = jsonObject.getAsJsonObject("attachment").get("url")?.asString
+                }
+                
+                showNotification(title, message, id, iconUrl, attachmentUrl)
                 
                 // Also pass back to Flutter if listening
                 messageListener?.invoke(jsonString)
@@ -149,7 +157,7 @@ class NtfyForegroundService : Service() {
         }
     }
 
-    private fun showNotification(title: String, message: String, id: String) {
+    private fun showNotification(title: String, message: String, id: String, iconUrl: String?, attachmentUrl: String?) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         // Find launch intent for the flutter app
@@ -162,7 +170,7 @@ class NtfyForegroundService : Service() {
             null
         }
 
-        val notification = NotificationCompat.Builder(this, NOTIFICATION_MSG_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, NOTIFICATION_MSG_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(android.R.drawable.ic_dialog_info) // Fallback icon
@@ -170,9 +178,41 @@ class NtfyForegroundService : Service() {
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .build()
 
-        notificationManager.notify(id.hashCode(), notification)
+        val iconBitmap = iconUrl?.let { getBitmapFromUrl(it) }
+        if (iconBitmap != null) {
+            builder.setLargeIcon(iconBitmap)
+        }
+
+        if (attachmentUrl != null) {
+            val attachmentBitmap = getBitmapFromUrl(attachmentUrl)
+            if (attachmentBitmap != null) {
+                builder.setStyle(NotificationCompat.BigPictureStyle()
+                    .bigPicture(attachmentBitmap)
+                    .bigLargeIcon(iconBitmap))
+            } else {
+                builder.setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            }
+        } else {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(message))
+        }
+
+        notificationManager.notify(id.hashCode(), builder.build())
+    }
+
+    private fun getBitmapFromUrl(urlStr: String): Bitmap? {
+        return try {
+            val url = URL(urlStr)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.doInput = true
+            connection.connectTimeout = 10000
+            connection.readTimeout = 10000
+            connection.connect()
+            BitmapFactory.decodeStream(connection.inputStream)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     private fun createNotificationChannels() {
