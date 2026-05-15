@@ -9,3 +9,7 @@
 * Added support for displaying local iOS notifications upon receiving a new message using `UNUserNotificationCenter`.
 * Implemented automatic background reconnection logic for iOS streams.
 * Updated `pubspec.yaml` to include iOS platform configuration.
+
+## 1.0.1
+
+* Added iOS platform support.
