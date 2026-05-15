@@ -1,6 +1,6 @@
 name: ntfy
 description: "A Flutter plugin to natively subscribe to ntfy (ntfy.sh) topics using an Android Foreground Service and SSE."
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/Shiba-Kar/ntfy
 
 environment:
