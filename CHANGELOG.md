@@ -13,3 +13,7 @@
 ## 1.0.1
 
 * Added iOS platform support.
+
+## 1.0.2
+
+* LICENSE
